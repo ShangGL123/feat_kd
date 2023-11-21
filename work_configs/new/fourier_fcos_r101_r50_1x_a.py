@@ -2,7 +2,7 @@ _base_ = "../base/1x_setting.py"
 
 add_conv = False
 weight_p = 0
-weight_a = 50
+weight_a = 25
 
 distiller = dict(
     type='DistillBaseDetector',
@@ -13,7 +13,7 @@ distiller = dict(
                          teacher_module = 'neck.fpn_convs.4.conv',
                          output_hook = True,
                          methods=[dict(type='FourierLoss',
-                                       name='loss_fgd_fpn_4',
+                                       name='loss_fourier_fpn_4',
                                        student_channels = 256,
                                        teacher_channels = 256,
                                        add_conv = add_conv,
@@ -26,7 +26,7 @@ distiller = dict(
                          teacher_module = 'neck.fpn_convs.3.conv',
                          output_hook = True,
                          methods=[dict(type='FourierLoss',
-                                       name='loss_fgd_fpn_3',
+                                       name='loss_fourier_fpn_3',
                                        student_channels = 256,
                                        teacher_channels = 256,
                                        add_conv = add_conv,
@@ -39,7 +39,7 @@ distiller = dict(
                          teacher_module = 'neck.fpn_convs.2.conv',
                          output_hook = True,
                          methods=[dict(type='FourierLoss',
-                                       name='loss_fgd_fpn_2',
+                                       name='loss_fourier_fpn_2',
                                        student_channels = 256,
                                        teacher_channels = 256,
                                        add_conv = add_conv,
@@ -52,7 +52,7 @@ distiller = dict(
                          teacher_module = 'neck.fpn_convs.1.conv',
                          output_hook = True,
                          methods=[dict(type='FourierLoss',
-                                       name='loss_fgd_fpn_1',
+                                       name='loss_fourier_fpn_1',
                                        student_channels = 256,
                                        teacher_channels = 256,
                                        add_conv = add_conv,
@@ -65,7 +65,7 @@ distiller = dict(
                          teacher_module = 'neck.fpn_convs.0.conv',
                          output_hook = True,
                          methods=[dict(type='FourierLoss',
-                                       name='loss_fgd_fpn_0',
+                                       name='loss_fourier_fpn_0',
                                        student_channels = 256,
                                        teacher_channels = 256,
                                        add_conv = add_conv,
