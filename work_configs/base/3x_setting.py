@@ -63,7 +63,7 @@ lr_config = dict(
     warmup_ratio=0.001,
     step=[8 * 3, 11 * 3])
 runner = dict(type='EpochBasedRunner', max_epochs=12 * 3)
-checkpoint_config = dict(interval=6)
+checkpoint_config = dict(interval=12)
 # yapf:disable
 log_config = dict(
     interval=50,

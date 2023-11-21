@@ -1,9 +1,11 @@
 from .pgd_reg import PGDRegLoss
 from .pgd_cls import PGDClsLoss
 from .fgd import FGDLoss
+from .fourier import FourierLoss
 
 __all__ = [
     'PGDRegLoss',
     'PGDClsLoss',
-    'FGDLoss'
+    'FGDLoss',
+    'FourierLoss'
 ]
