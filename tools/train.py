@@ -174,7 +174,7 @@ def main():
         model = build_distiller(cfg.distiller, teacher_cfg, student_cfg,
                                 train_cfg=student_cfg.get('train_cfg'),
                                 test_cfg=student_cfg.get('test_cfg'))
-        model.student.init_weights() # 这里是递归调用的,可以自动初始化student中的backbone neck head等
+        model.init_weights() # 这里是递归调用的,可以自动初始化student中的backbone neck head等
         # print(model.student.backbone.is_init, model.student.neck.is_init, model.student.bbox_head.is_init)
         assert model.student.is_init == True
         model.init_weights_teacher()
