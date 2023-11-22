@@ -1,14 +1,14 @@
-_base_ = "/base/1x_setting.py"
+_base_ = "base/1x_setting.py"
 
 temperature = 0.8
-alpha       = 0.08
+alpha       = 0.04
 delta       = 0.0008
 beta        = alpha * 0.5
 gamma       = alpha * 1.6
 
 distiller = dict(
     type='PredictionGuidedDistiller',
-    teacher_pretrained = 'work_dirs/ddod_r101_3x_ms/epoch_36.pth',
+    teacher_pretrained = 'work_dirs/fcos_r101_3x_ms/epoch_36.pth',
     init_student = False,
     distill_cfg=[dict(student_module='bbox_head.cls_identities.0',
                       teacher_module='bbox_head.cls_identities.0',
@@ -138,5 +138,5 @@ distiller = dict(
                 ]
     )
 
-student_cfg = 'work_configs/detectors/ddod_r50_distill_head.py'
-teacher_cfg = 'work_configs/detectors/ddod_r101_3x_ms.py'
+student_cfg = 'work_configs/detectors/fcos_r50_distill_head.py'
+teacher_cfg = 'work_configs/detectors/fcos_r101_3x_ms.py'
