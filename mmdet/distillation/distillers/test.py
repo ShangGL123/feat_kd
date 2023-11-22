@@ -117,46 +117,14 @@ class DistillBaseDetector(BaseDetector):
             state_dict = OrderedDict(all_name)
             load_state_dict(self.student, state_dict)
 
-    def forward_train(self, img, img_metas, **kwargs):
-
-        """
-        Args:
-            img (Tensor): Input images of shape (N, C, H, W).
-                Typically these should be mean centered and std scaled.
-            img_metas (list[dict]): A List of image info dict where each dict
-                has: 'img_shape', 'scale_factor', 'flip', and may also contain
-                'filename', 'ori_shape', 'pad_shape', and 'img_norm_cfg'.
-                For details on the values of these keys see
-                :class:`mmdet.datasets.pipelines.Collect`.
-
-        Returns:
-            dict[str, Tensor]: A dictionary of loss components(student's losses and distiller's losses).
-        """
-       
-
-        with torch.no_grad():
-            self.teacher.eval()
-            feat = self.teacher.extract_feat(img)
-           
-        student_loss = self.student.forward_train(img, img_metas, **kwargs)
-        
-        
-        buffer_dict = dict(self.named_buffers())
-        for item_loc in self.distill_cfg:
-            
-            student_module = 'student_' + item_loc.student_module.replace('.','_')
-            teacher_module = 'teacher_' + item_loc.teacher_module.replace('.','_')
-            
-            student_feat = buffer_dict[student_module]
-            teacher_feat = buffer_dict[teacher_module]
-
-            for item_loss in item_loc.methods:
-                loss_name = item_loss.name
-                
-                student_loss[loss_name] = self.distill_losses[loss_name](student_feat,teacher_feat,kwargs['gt_bboxes'], img_metas)
-
-
-        return student_loss
+    def forward_train(self,
+                      img,
+                      img_metas,
+                      gt_bboxes,
+                      gt_labels,
+                      gt_bboxes_ignore=None,
+                      **kwargs):
+        pass
 
     def simple_test(self, img, img_metas, **kwargs):
         return self.student.simple_test(img, img_metas, **kwargs)
