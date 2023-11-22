@@ -89,8 +89,8 @@ def train_detector(model,
     if distiller_cfg is None:
         optimizer = build_optimizer(model, cfg.optimizer)
     else:
-        # optimizer = build_optimizer(model.module.base_parameters(), cfg.optimizer)
-        optimizer = build_optimizer(model, cfg.optimizer)
+        optimizer = build_optimizer(model.module.base_parameters(), cfg.optimizer)
+        # optimizer = build_optimizer(model, cfg.optimizer)
 
     if 'runner' not in cfg:
         cfg.runner = {

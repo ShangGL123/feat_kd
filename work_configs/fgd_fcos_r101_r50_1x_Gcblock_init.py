@@ -1,8 +1,13 @@
-_base_ = "../base/1x_setting.py"
+_base_ = "base/1x_setting.py"
 
-add_conv = False
-weight_p = 0.025
-weight_a = 25
+temp=0.8
+# alpha_fgd=0.0016
+# beta_fgd=0.0008
+# gamma_fgd=0.0008
+alpha_fgd=0
+beta_fgd=0
+gamma_fgd=0
+lambda_fgd=0.000008
 
 distiller = dict(
     type='DistillBaseDetector',
@@ -12,65 +17,75 @@ distiller = dict(
     distill_cfg = [ dict(student_module = 'neck.fpn_convs.4.conv',
                          teacher_module = 'neck.fpn_convs.4.conv',
                          output_hook = True,
-                         methods=[dict(type='FourierLoss',
-                                       name='loss_fourier_fpn_4',
+                         methods=[dict(type='FGDLoss',
+                                       name='loss_fgd_fpn_4',
                                        student_channels = 256,
                                        teacher_channels = 256,
-                                       add_conv = add_conv,
-                                       weight_p = weight_p,
-                                       weight_a = weight_a,
+                                       temp = temp,
+                                       alpha_fgd=alpha_fgd,
+                                       beta_fgd=beta_fgd,
+                                       gamma_fgd=gamma_fgd,
+                                       lambda_fgd=lambda_fgd,
                                        )
                                 ]
                         ),
                     dict(student_module = 'neck.fpn_convs.3.conv',
                          teacher_module = 'neck.fpn_convs.3.conv',
                          output_hook = True,
-                         methods=[dict(type='FourierLoss',
-                                       name='loss_fourier_fpn_3',
+                         methods=[dict(type='FGDLoss',
+                                       name='loss_fgd_fpn_3',
                                        student_channels = 256,
                                        teacher_channels = 256,
-                                       add_conv = add_conv,
-                                       weight_p = weight_p,
-                                       weight_a = weight_a,
+                                       temp = temp,
+                                       alpha_fgd=alpha_fgd,
+                                       beta_fgd=beta_fgd,
+                                       gamma_fgd=gamma_fgd,
+                                       lambda_fgd=lambda_fgd,
                                        )
                                 ]
                         ),
                     dict(student_module = 'neck.fpn_convs.2.conv',
                          teacher_module = 'neck.fpn_convs.2.conv',
                          output_hook = True,
-                         methods=[dict(type='FourierLoss',
-                                       name='loss_fourier_fpn_2',
+                         methods=[dict(type='FGDLoss',
+                                       name='loss_fgd_fpn_2',
                                        student_channels = 256,
                                        teacher_channels = 256,
-                                       add_conv = add_conv,
-                                       weight_p = weight_p,
-                                       weight_a = weight_a,
+                                       temp = temp,
+                                       alpha_fgd=alpha_fgd,
+                                       beta_fgd=beta_fgd,
+                                       gamma_fgd=gamma_fgd,
+                                       lambda_fgd=lambda_fgd,
                                        )
                                 ]
                         ),
                     dict(student_module = 'neck.fpn_convs.1.conv',
                          teacher_module = 'neck.fpn_convs.1.conv',
                          output_hook = True,
-                         methods=[dict(type='FourierLoss',
-                                       name='loss_fourier_fpn_1',
+                         methods=[dict(type='FGDLoss',
+                                       name='loss_fgd_fpn_1',
                                        student_channels = 256,
                                        teacher_channels = 256,
-                                       add_conv = add_conv,
-                                       weight_p = weight_p,
-                                       weight_a = weight_a,
+                                       temp = temp,
+                                       alpha_fgd=alpha_fgd,
+                                       beta_fgd=beta_fgd,
+                                       gamma_fgd=gamma_fgd,
+                                       lambda_fgd=lambda_fgd,
                                        )
                                 ]
                         ),
                     dict(student_module = 'neck.fpn_convs.0.conv',
                          teacher_module = 'neck.fpn_convs.0.conv',
                          output_hook = True,
-                         methods=[dict(type='FourierLoss',
-                                       name='loss_fourier_fpn_0',
+                         methods=[dict(type='FGDLoss',
+                                       name='loss_fgd_fpn_0',
                                        student_channels = 256,
                                        teacher_channels = 256,
-                                       add_conv = add_conv,
-                                       weight_p = weight_p,
-                                       weight_a = weight_a,
+                                       temp = temp,
+                                       alpha_fgd=alpha_fgd,
+                                       beta_fgd=beta_fgd,
+                                       gamma_fgd=gamma_fgd,
+                                       lambda_fgd=lambda_fgd,
                                        )
                                 ]
                         ),
