@@ -153,8 +153,7 @@ class DistillBaseDetector(BaseDetector):
             for item_loss in item_loc.methods:
                 loss_name = item_loss.name
                 
-                student_loss[loss_name] = self.distill_losses[loss_name](student_feat,teacher_feat,kwargs['gt_bboxes'], img_metas)
-
+                student_loss[loss_name] = self.distill_losses[loss_name](student_feat, teacher_feat, kwargs['gt_bboxes'], img_metas)
 
         return student_loss
 
