@@ -4,6 +4,7 @@ from .fgd import FGDLoss
 from .mgd import MGDLoss
 from .fourier import FourierLoss
 from .head import KDQualityFocalLoss, IoULoss
+from .gt_cl import GTCLLoss
 
 __all__ = [
     'PGDRegLoss',
@@ -12,5 +13,6 @@ __all__ = [
     'MGDLoss',
     'FourierLoss',
     'KDQualityFocalLoss',
-    'IoULoss'
+    'IoULoss',
+    'GTCLLoss'
 ]
