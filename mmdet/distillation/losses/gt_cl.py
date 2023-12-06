@@ -5,8 +5,20 @@ from mmcv.cnn import constant_init, kaiming_init
 from mmdet.distillation.builder import DISTILL_LOSSES
 from mmdet.models.builder import build_loss
 from mmdet.models.losses.utils import weighted_loss
+import mmcv
 
+@mmcv.jit(derivate=True, coderize=True)
+@weighted_loss
+def kd_focal_loss(pred,
+                target,
+                weight=None,
+                beta=1,
+                reduction='mean',
+                avg_factor=None):
 
+    target = target.detach()
+    loss = F.binary_cross_entropy(pred, target, reduction='none')
+    return loss
 
 @DISTILL_LOSSES.register_module()
 class GTCLLoss(nn.Module):
@@ -29,12 +41,14 @@ class GTCLLoss(nn.Module):
                  name,
                  gt_bbox_rescale=False,
                  T=0.07,
+                 loss_cl_weight=1,
                  loss_cl=dict(type='CrossEntropyLoss', use_sigmoid=False, loss_weight=0.05),
                  ):
         super(GTCLLoss, self).__init__()
         self.gt_bbox_rescale = gt_bbox_rescale
         self.T = T
         self.loss_cl = build_loss(loss_cl)
+        self.loss_cl_weight = loss_cl_weight
 
         if student_channels != teacher_channels:
             self.align = nn.Conv2d(student_channels, teacher_channels, kernel_size=1, stride=1, padding=0)
@@ -71,15 +85,17 @@ class GTCLLoss(nn.Module):
 
             relation_T = preds_T_perimg @ preds_T_perimg.T
             # import ipdb;ipdb.set_trace()
-            relation_weight = 1-relation_T # + torch.eye(H*W, H*W).cuda(relation_T.device)
+            relation_weight = 1-relation_T  + torch.eye(H*W, H*W).cuda(relation_T.device)
 
             # compute logits
             # Einstein sum is more intuitive
             logits = torch.einsum('nc,ck->nk', [preds_S_perimg, preds_T_perimg.T])
             # apply temperature
-            logits /= self.T
+            # logits /= self.T
 
             # labels: positive key indicators
-            labels = torch.arange(logits.shape[0]).cuda(logits.device)
-            loss_cl += self.loss_cl(logits, labels)
+            # labels = torch.arange(logits.shape[0]).cuda(logits.device)
+            labels = torch.eye(logits.shape[0], logits.shape[0]).cuda(logits.device)
+            # import ipdb;ipdb.set_trace()
+            loss_cl += kd_focal_loss(logits.clamp(min=1e-5), relation_weight) * self.loss_cl_weight
         return loss_cl
