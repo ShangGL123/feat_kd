@@ -20,7 +20,6 @@ class DistillHeadBaseDetector(BaseDetector):
                  distill_cfg=None,
                  teacher_pretrained=None,
                  init_student=False,
-                 norm_stu_feat=False,
                  stu_lambda=1.,
                  spatial_and_channel=False,):
 
@@ -39,7 +38,6 @@ class DistillHeadBaseDetector(BaseDetector):
                                       test_cfg=student_cfg.get('test_cfg'))
 
         self.init_student = init_student
-        self.norm_stu_feat = norm_stu_feat
         self.stu_lambda = stu_lambda
         self.spatial_and_channel = spatial_and_channel
 
@@ -169,29 +167,22 @@ class DistillHeadBaseDetector(BaseDetector):
         student_loss = self.student.bbox_head.forward_train(stu_feats, img_metas, **kwargs)
         # stu_feats -> tea_head
 
-        # mixup stu_feats with tea_feats
+        # mix stu_feats with tea_feats
         nums_level = len(stu_feats)
-        stu_feats_list = []
+        mix_stu_feats_list = []
         for level in range(nums_level):
             N, C, H, W = tea_feats[level].shape
             device = tea_feats[level].device
             
-            if self.spatial_and_channel:
-                mat = torch.rand((N,C,H,W)).to(device)
-            else:
-                mat = torch.rand((N,1,H,W)).to(device)
+            mat = torch.rand((N,1,H,W)).to(device)
 
             stu_mat = torch.where(mat>=self.stu_lambda, 0, 1).to(device)
-            tea_mat = 1 - stu_mat
-            mixup_feat = torch.mul(stu_feats[level], stu_mat) + torch.mul(tea_feats[level], tea_mat)
-            stu_feats_list.append(mixup_feat)
-        stu_feats = tuple(stu_feats_list)
+            mix_stu_feat = torch.mul(stu_feats[level], stu_mat)
+            mix_stu_feats_list.append(mix_stu_feat)
+        mix_stu_feats = tuple(mix_stu_feats_list)
 
-        # norm stu_feats with tea_feats
-        if self.norm_stu_feat:
-            stu_feats = tuple(multi_apply(self.align_scale, stu_feats, tea_feats)[0])
-        
-        stu_cls_scores, stu_bbox_preds, stu_centernesses = self.teacher.bbox_head(stu_feats)
+        stu_cls_scores, stu_bbox_preds, stu_centernesses = self.teacher.bbox_head(mix_stu_feats)
+
         
         buffer_dict = dict(self.named_buffers())
         for item_loc in self.distill_cfg:
