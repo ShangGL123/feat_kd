@@ -2,6 +2,7 @@ from .builder import ( DISTILLER,DISTILL_LOSSES,build_distill_loss,build_distill
 from .distillers.distill_base import DistillBaseDetector
 from .distillers.distill_pgd import PredictionGuidedDistiller
 from .distillers.distill_head_fcos import DistillHeadBaseDetector
+from .distillers.distill_base_lora import DistillBaseDetector_Lora
 from .losses import *
 
 

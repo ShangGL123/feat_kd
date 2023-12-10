@@ -669,3 +669,86 @@ class ResNetV1d(ResNet):
     def __init__(self, **kwargs):
         super(ResNetV1d, self).__init__(
             deep_stem=True, avg_down=True, **kwargs)
+
+class LoRALinear(nn.Module):
+    r"""Implements LoRA in a linear layer.
+
+    Args:
+        original_layer (nn.Linear): The linear layer to be finetuned.
+        alpha (int): The scale factor of LoRA. Defaults to 1.
+        rank (int): The rank of LoRA. Defaults to 0.
+        drop_rate (float): The drop out rate for LoRA. Defaults to 0.
+
+    Note:
+        The forward process of LoRA linear layer is:
+
+        .. math::
+            `y = W_0 x + BAx * (\alpha / r)`
+
+        Where :math:`x` is the input, :math:`y` is the output,
+        :math:`W_0` is the parameter of the original layer,
+        :math:`A` and :math:`B` are the low-rank decomposition matrixs,
+        :math: `\alpha` is the scale factor and :math: `r` is the rank.
+    """
+
+    def __init__(self,
+                 in_features,
+                 out_features,
+                 alpha: int = 1,
+                 rank: int = 0,
+                 drop_rate: float = 0.):
+        super(LoRALinear, self).__init__()
+        import math
+        self.lora_dropout = nn.Dropout(drop_rate)
+        self.lora_down = nn.Linear(in_features, rank, bias=False)
+        self.lora_up = nn.Linear(rank, out_features, bias=False)
+        self.scaling = alpha / rank
+
+        nn.init.kaiming_uniform_(self.lora_down.weight, a=math.sqrt(5))
+        nn.init.zeros_(self.lora_up.weight)
+
+
+    def forward(self, x):
+        N,C,H,W = x.shape
+        x = x.reshape(N,C,H*W).permute(0,2,1)
+        lora_x = self.lora_dropout(x)
+        lora_out = self.lora_up(self.lora_down(lora_x)) * self.scaling
+        return lora_out.permute(0,2,1).reshape(N,-1,H,W)
+
+
+@BACKBONES.register_module()
+class ResNet_lora(ResNet):
+    r"""ResNetV1d variant described in `Bag of Tricks
+    <https://arxiv.org/pdf/1812.01187.pdf>`_.
+
+    Compared with default ResNet(ResNetV1b), ResNetV1d replaces the 7x7 conv in
+    the input stem with three 3x3 convs. And in the downsampling block, a 2x2
+    avg_pool with stride 2 is added before conv, whose stride is changed to 1.
+    """
+
+    def __init__(self, **kwargs):
+        super(ResNet_lora, self).__init__( **kwargs)
+        self.lora = nn.ModuleList() 
+        self.lora.append(LoRALinear(64, 64, 8,8,0))
+        self.lora.append(LoRALinear(256, 256, 8,8,0))
+        self.lora.append(LoRALinear(512, 512, 8,8,0))
+        self.lora.append(LoRALinear(1024, 1024, 8,8,0))
+
+
+    def forward(self, x):
+        """Forward function."""
+        if self.deep_stem:
+            x = self.stem(x)
+        else:
+            x = self.conv1(x)
+            x = self.norm1(x)
+            x = self.relu(x)
+        x = self.maxpool(x)
+        outs = []
+        for i, layer_name in enumerate(self.res_layers):
+            res_layer = getattr(self, layer_name)
+            x1 = self.lora[i](x)
+            x = res_layer(x+x1)
+            if i in self.out_indices:
+                outs.append(x)
+        return tuple(outs)
