@@ -6,8 +6,8 @@ lambda_mgd=0.65
 distiller = dict(
     type='DistillBaseDetector_Lora',
     teacher_pretrained = 'work_dirs/fcos_r101_3x_ms/epoch_36.pth',
-    # init_student = True,
-    init_student = False,
+    init_student = True,
+    # init_student = False,
     distill_cfg = [ dict(student_module = 'neck.fpn_convs.4.conv',
                          teacher_module = 'neck.fpn_convs.4.conv',
                          output_hook = True,
