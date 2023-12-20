@@ -12,8 +12,8 @@ model = dict(
         norm_cfg=dict(type='BN', requires_grad=False),
         norm_eval=True,
         style='pytorch',
-        # init_cfg=dict(type='Pretrained', checkpoint='data/pretrain_models/resnet101-63fe2227.pth')),
-        init_cfg=dict(type='Pretrained', checkpoint='data/pretrain_models/resnet101-5d3b4d8f.pth')),
+        init_cfg=dict(type='Pretrained', checkpoint='data/pretrain_models/resnet101-63fe2227.pth')),
+        # init_cfg=dict(type='Pretrained', checkpoint='data/pretrain_models/resnet101-5d3b4d8f.pth')),
     neck=dict(
         type='FPN',
         in_channels=[256, 512, 1024, 2048],

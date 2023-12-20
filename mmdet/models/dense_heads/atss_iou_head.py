@@ -537,6 +537,7 @@ class ATSSIoUHead(AnchorHead):
         assert len(anchor_list) == len(valid_flag_list) == num_imgs
 
         # anchor number of multi levels
+        # import ipdb;ipdb.set_trace()
         num_level_anchors = [anchors.size(0) for anchors in anchor_list[0]]
         num_level_anchors_list = [num_level_anchors] * num_imgs
 
@@ -551,6 +552,7 @@ class ATSSIoUHead(AnchorHead):
             gt_bboxes_ignore_list = [None for _ in range(num_imgs)]
         if gt_labels_list is None:
             gt_labels_list = [None for _ in range(num_imgs)]
+        
         (all_anchors, all_labels, all_label_weights, all_bbox_targets,
          all_bbox_weights, pos_inds_list, neg_inds_list) = multi_apply(
              self._get_target_single,
@@ -564,6 +566,7 @@ class ATSSIoUHead(AnchorHead):
              label_channels=label_channels,
              unmap_outputs=unmap_outputs)
         # no valid anchors
+        # import ipdb;ipdb.set_trace()
         if any([labels is None for labels in all_labels]):
             return None
         # sampled anchors of all images
@@ -578,6 +581,10 @@ class ATSSIoUHead(AnchorHead):
                                              num_level_anchors)
         bbox_weights_list = images_to_levels(all_bbox_weights,
                                              num_level_anchors)
+        # import ipdb;ipdb.set_trace() 
+        # [13600, 3400, 850, 221, 63]
+        # 每一个元素shape [4, 13600, 4]  [4, 13600] [4, 13600]
+        #  [4, 13600, 4]  [4, 13600, 4]   350  77146
         return (anchors_list, labels_list, label_weights_list,
                 bbox_targets_list, bbox_weights_list, num_total_pos,
                 num_total_neg)

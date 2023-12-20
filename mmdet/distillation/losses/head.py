@@ -2,7 +2,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch
 from ..builder import DISTILL_LOSSES
-from mmdet.models.losses.utils import weighted_loss
+from mmdet.models.losses.utils import weighted_loss, weight_reduce_loss
 from mmdet.core import bbox_overlaps
 import mmcv
 
@@ -11,13 +11,7 @@ import mmcv
 @weighted_loss
 def kd_quality_focal_loss(pred,
                           target,
-                          weight=None,
-                          beta=1,
-                          reduction='mean',
-                          avg_factor=None):
-    num_classes = pred.size(1)
-    if weight is not None:
-        weight = weight[:, None].repeat(1, num_classes)
+                          beta=1,):
 
     target = target.detach().sigmoid()
     loss = F.binary_cross_entropy_with_logits(pred, target, reduction='none')
@@ -66,6 +60,11 @@ class KDQualityFocalLoss(nn.Module):
         reduction = (
             reduction_override if reduction_override else self.reduction)
         if self.use_sigmoid:
+            # import ipdb;ipdb.set_trace()
+            if (weight is not None) and (
+                reduction != 'none'):
+                if pred.dim() == weight.dim() + 1:
+                    weight = weight.unsqueeze(1)
             loss = self.loss_weight * kd_quality_focal_loss(
                 pred,
                 target,
@@ -76,6 +75,118 @@ class KDQualityFocalLoss(nn.Module):
         else:
             raise NotImplementedError
         return loss
+
+
+def binary_cross_entropy(pred,
+                         label,
+                         weight=None,
+                         reduction='mean',
+                         avg_factor=None,
+                         class_weight=None):
+    """Calculate the binary CrossEntropy loss.
+
+    Args:
+        pred (torch.Tensor): The prediction with shape (N, 1).
+        label (torch.Tensor): The learning label of the prediction.
+        weight (torch.Tensor, optional): Sample-wise loss weight.
+        reduction (str, optional): The method used to reduce the loss.
+            Options are "none", "mean" and "sum".
+        avg_factor (int, optional): Average factor that is used to average
+            the loss. Defaults to None.
+        class_weight (list[float], optional): The weight for each class.
+
+    Returns:
+        torch.Tensor: The calculated loss
+    """
+    if pred.dim() != label.dim():
+        label, weight = _expand_onehot_labels(label, weight, pred.size(-1))
+
+    # weighted element-wise losses
+    if weight is not None:
+        weight = weight.float()
+    loss = F.binary_cross_entropy_with_logits(
+        pred, label.float(), pos_weight=class_weight, reduction='none')
+    # do the reduction for the weighted loss
+    loss = weight_reduce_loss(
+        loss, weight, reduction=reduction, avg_factor=avg_factor)
+
+    return loss
+
+@DISTILL_LOSSES.register_module()
+class CrossEntropyLoss(nn.Module):
+
+    def __init__(self,
+                 use_sigmoid=False,
+                 use_mask=False,
+                 reduction='mean',
+                 class_weight=None,
+                 loss_weight=1.0):
+        """CrossEntropyLoss.
+
+        Args:
+            use_sigmoid (bool, optional): Whether the prediction uses sigmoid
+                of softmax. Defaults to False.
+            use_mask (bool, optional): Whether to use mask cross entropy loss.
+                Defaults to False.
+            reduction (str, optional): . Defaults to 'mean'.
+                Options are "none", "mean" and "sum".
+            class_weight (list[float], optional): Weight of each class.
+                Defaults to None.
+            loss_weight (float, optional): Weight of the loss. Defaults to 1.0.
+        """
+        super(CrossEntropyLoss, self).__init__()
+        assert (use_sigmoid is False) or (use_mask is False)
+        self.use_sigmoid = use_sigmoid
+        self.use_mask = use_mask
+        self.reduction = reduction
+        self.loss_weight = loss_weight
+        self.class_weight = class_weight
+
+        if self.use_sigmoid:
+            self.cls_criterion = binary_cross_entropy
+        elif self.use_mask:
+            self.cls_criterion = mask_cross_entropy
+        else:
+            self.cls_criterion = cross_entropy
+
+    def forward(self,
+                cls_score,
+                label,
+                weight=None,
+                avg_factor=None,
+                reduction_override=None,
+                **kwargs):
+        """Forward function.
+
+        Args:
+            cls_score (torch.Tensor): The prediction.
+            label (torch.Tensor): The learning label of the prediction.
+            weight (torch.Tensor, optional): Sample-wise loss weight.
+            avg_factor (int, optional): Average factor that is used to average
+                the loss. Defaults to None.
+            reduction (str, optional): The method used to reduce the loss.
+                Options are "none", "mean" and "sum".
+        Returns:
+            torch.Tensor: The calculated loss
+        """
+        assert reduction_override in (None, 'none', 'mean', 'sum')
+        reduction = (
+            reduction_override if reduction_override else self.reduction)
+        if self.class_weight is not None:
+            class_weight = cls_score.new_tensor(
+                self.class_weight, device=cls_score.device)
+        else:
+            class_weight = None
+        loss_cls = self.loss_weight * self.cls_criterion(
+            cls_score,
+            label,
+            weight,
+            class_weight=class_weight,
+            reduction=reduction,
+            avg_factor=avg_factor,
+            **kwargs)
+        return loss_cls
+
 
 
 @mmcv.jit(derivate=True, coderize=True)
@@ -169,6 +280,66 @@ class IoULoss(nn.Module):
             target,
             weight,
             linear=self.linear,
+            eps=self.eps,
+            reduction=reduction,
+            avg_factor=avg_factor,
+            **kwargs)
+        return loss
+
+
+@mmcv.jit(derivate=True, coderize=True)
+@weighted_loss
+def giou_loss(pred, target, eps=1e-7):
+    r"""`Generalized Intersection over Union: A Metric and A Loss for Bounding
+    Box Regression <https://arxiv.org/abs/1902.09630>`_.
+
+    Args:
+        pred (torch.Tensor): Predicted bboxes of format (x1, y1, x2, y2),
+            shape (n, 4).
+        target (torch.Tensor): Corresponding gt bboxes, shape (n, 4).
+        eps (float): Eps to avoid log(0).
+
+    Return:
+        Tensor: Loss tensor.
+    """
+    gious = bbox_overlaps(pred, target, mode='giou', is_aligned=True, eps=eps)
+    loss = 1 - gious
+    return loss
+
+
+@DISTILL_LOSSES.register_module()
+class GIoULoss(nn.Module):
+
+    def __init__(self, eps=1e-6, reduction='mean', loss_weight=1.0):
+        super(GIoULoss, self).__init__()
+        self.eps = eps
+        self.reduction = reduction
+        self.loss_weight = loss_weight
+
+    def forward(self,
+                pred,
+                target,
+                weight=None,
+                avg_factor=None,
+                reduction_override=None,
+                **kwargs):
+        if weight is not None and not torch.any(weight > 0):
+            if pred.dim() == weight.dim() + 1:
+                weight = weight.unsqueeze(1)
+            return (pred * weight).sum()  # 0
+        assert reduction_override in (None, 'none', 'mean', 'sum')
+        reduction = (
+            reduction_override if reduction_override else self.reduction)
+        if weight is not None and weight.dim() > 1:
+            # TODO: remove this in the future
+            # reduce the weight of shape (n, 4) to (n,) to match the
+            # giou_loss of shape (n,)
+            assert weight.shape == pred.shape
+            weight = weight.mean(-1)
+        loss = self.loss_weight * giou_loss(
+            pred,
+            target,
+            weight,
             eps=self.eps,
             reduction=reduction,
             avg_factor=avg_factor,
