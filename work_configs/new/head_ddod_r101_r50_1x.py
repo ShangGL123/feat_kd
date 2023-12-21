@@ -4,8 +4,8 @@ alpha_mgd=0
 lambda_mgd=0.65
 
 distiller = dict(
-    type='DistillHeadBaseDetector_ATSS',
-    teacher_pretrained = 'work_dirs/atss_r101_3x_ms/epoch_36.pth',
+    type='DistillHeadBaseDetector_DDOD',
+    teacher_pretrained = 'work_dirs/ddod_r101_3x_ms/epoch_36.pth',
     init_student = True,
     distill_cfg = [ dict(student_module = 'neck.fpn_convs.4.conv',
                          teacher_module = 'neck.fpn_convs.4.conv',
@@ -74,5 +74,5 @@ distiller = dict(
                    ]
     )
 
-student_cfg = 'work_configs/detectors/atss_r50_1x.py'
-teacher_cfg = 'work_configs/detectors/atss_r101_3x_ms.py'
+student_cfg = 'work_configs/detectors/ddod_r50_1x.py'
+teacher_cfg = 'work_configs/detectors/ddod_r101_3x_ms.py'

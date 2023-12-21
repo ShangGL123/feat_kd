@@ -5,7 +5,7 @@ lambda_mgd=0.65
 
 distiller = dict(
     type='DistillHeadBaseDetector_ATSS',
-    teacher_pretrained = 'work_dirs/fcos_r101_3x_ms/epoch_36.pth',
+    teacher_pretrained = 'work_dirs/atss_r101_3x_ms/epoch_36.pth',
     init_student = True,
     distill_cfg = [ dict(student_module = 'neck.fpn_convs.4.conv',
                          teacher_module = 'neck.fpn_convs.4.conv',
