@@ -283,7 +283,7 @@ class DistillHeadBaseDetector_GFL(BaseDetector):
             stu_bbox_pred,
             tea_bbox_pred,
             weight=reg_weights[:, None].expand(-1, 4).reshape(-1),
-            avg_factor=4.0)
+            avg_factor=avg_factor)
 
         return loss_cls_kd, loss_reg_kd
 
