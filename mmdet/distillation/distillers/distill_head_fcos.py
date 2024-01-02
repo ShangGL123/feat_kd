@@ -46,6 +46,7 @@ class DistillHeadBaseDetector(BaseDetector):
         self.distill_cfg = distill_cfg
         student_modules = dict(self.student.named_modules())
         teacher_modules = dict(self.teacher.named_modules())
+        # self.count=0
 
         def regitster_hooks(student_module, teacher_module):
             def hook_teacher_forward(module, input, output):
@@ -162,7 +163,54 @@ class DistillHeadBaseDetector(BaseDetector):
         self.teacher.eval()
         tea_feats = self.teacher.extract_feat(img)
         tea_cls_scores, tea_bbox_preds, tea_centernesses = self.teacher.bbox_head(tea_feats)
-           
+
+        
+        # vis_img = img[0].permute(1,2,0).cpu().numpy().copy()
+        # import numpy as np
+        # import cv2
+        # vis_img =  vis_img * np.array([58.395, 57.12, 57.375]).reshape(1,1,3)
+        # vis_img = vis_img + np.array([123.675, 116.28, 103.53]).reshape(1,1,3)
+        # vis_img = vis_img[...,::-1].copy()
+        # for i, cls_feat in enumerate(tea_cls_scores):
+        #     cls_feat = cls_feat.permute(0, 2, 3, 1)
+        #     cls_feat = cls_feat.max(dim=-1)[0].sigmoid()
+        #     cls_feat = cls_feat.permute(1,2,0).cpu().numpy().copy()
+
+        #     cls_feat = (cls_feat * 255).astype(np.uint8)
+        #     cls_feat = cv2.applyColorMap(cls_feat, cv2.COLORMAP_PLASMA)
+        #     desired_size = (vis_img.shape[1], vis_img.shape[0])
+        #     cls_feat = cv2.resize(cls_feat, desired_size)
+        #     # vis_img = cls_feat
+        #     vis_img_out = vis_img + cls_feat
+        #     print(cv2.imwrite('/home/cjh/projects/PGD/work_dirs/vis/cnn_vis{0}.jpg'.format(self.count + i), vis_img_out))
+        # self.count += 10    
+
+
+
+        # vis_img = img[0].permute(1,2,0).cpu().numpy().copy()
+        # import numpy as np
+        # import cv2
+        # vis_img =  vis_img * np.array([58.395, 57.12, 57.375]).reshape(1,1,3)
+        # vis_img = vis_img + np.array([123.675, 116.28, 103.53]).reshape(1,1,3)
+        # vis_img = vis_img[...,::-1].copy()
+        # out = self.teacher.bbox_head.vis_assign(tea_feats, img_metas, **kwargs)
+        # for i, out_i in enumerate(out):
+        #     h, w = tea_feats[i].shape[2], tea_feats[i].shape[3]
+        #     out_i[out_i<80]=1
+        #     out_i[out_i==80]=0
+        #     out_i = out_i.reshape(h, w)[...,None].cpu().numpy().copy()
+
+        #     cls_feat = (out_i * 255).astype(np.uint8)
+        #     cls_feat = cv2.applyColorMap(cls_feat, cv2.COLORMAP_PLASMA)
+        #     desired_size = (vis_img.shape[1], vis_img.shape[0])
+        #     cls_feat = cv2.resize(cls_feat, desired_size)
+        #     # vis_img = cls_feat
+        #     vis_img_out = vis_img + cls_feat
+        #     print(cv2.imwrite('/home/cjh/projects/PGD/work_dirs/vis_assign/cnn_vis{0}.jpg'.format(self.count + i), vis_img_out))
+        # self.count += 10       
+
+
+          
         stu_feats = self.student.extract_feat(img)
         student_loss = self.student.bbox_head.forward_train(stu_feats, img_metas, **kwargs)
         # stu_feats -> tea_head

@@ -70,10 +70,11 @@ log_config = dict(
 # yapf:enable
 custom_hooks = [dict(type='NumClassCheckHook')]
 
-# dist_params = dict(backend='nccl')
+
 log_level = 'INFO'
 # work_dir = None
 load_from = None
 resume_from = None
 workflow = [('train', 1)]
+# dist_params = dict(backend='nccl')
 dist_params = dict(backend='nccl',port=29005)
