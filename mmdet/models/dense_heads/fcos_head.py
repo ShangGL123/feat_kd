@@ -184,37 +184,37 @@ class FCOSHead(AnchorFreeHead):
             bbox_pred = bbox_pred.exp()
         return cls_score, bbox_pred, centerness
     
-    # def vis_assign(self,
-    #                   x,
-    #                   img_metas,
-    #                   gt_bboxes,
-    #                   gt_labels=None,
-    #                   gt_bboxes_ignore=None,
-    #                   proposal_cfg=None,
-    #                   **kwargs):
-    #     outs = self(x)
-    #     if gt_labels is None:
-    #         loss_inputs = outs + (gt_bboxes, img_metas)
-    #     else:
-    #         loss_inputs = outs + (gt_bboxes, gt_labels, img_metas)
-    #     losses = self.vis_loss(*loss_inputs, gt_bboxes_ignore=gt_bboxes_ignore)
-    #     return losses
+    def vis_assign(self,
+                      x,
+                      img_metas,
+                      gt_bboxes,
+                      gt_labels=None,
+                      gt_bboxes_ignore=None,
+                      proposal_cfg=None,
+                      **kwargs):
+        outs = self(x)
+        if gt_labels is None:
+            loss_inputs = outs + (gt_bboxes, img_metas)
+        else:
+            loss_inputs = outs + (gt_bboxes, gt_labels, img_metas)
+        losses = self.vis_loss(*loss_inputs, gt_bboxes_ignore=gt_bboxes_ignore)
+        return losses
 
-    # def vis_loss(self,
-    #          cls_scores,
-    #          bbox_preds,
-    #          centernesses,
-    #          gt_bboxes,
-    #          gt_labels,
-    #          img_metas,
-    #          gt_bboxes_ignore=None):
-    #     assert len(cls_scores) == len(bbox_preds) == len(centernesses)
-    #     featmap_sizes = [featmap.size()[-2:] for featmap in cls_scores]
-    #     all_level_points = self.get_points(featmap_sizes, bbox_preds[0].dtype,
-    #                                        bbox_preds[0].device)
-    #     labels, bbox_targets = self.get_targets(all_level_points, gt_bboxes,
-    #                                             gt_labels)
-    #     return labels
+    def vis_loss(self,
+             cls_scores,
+             bbox_preds,
+             centernesses,
+             gt_bboxes,
+             gt_labels,
+             img_metas,
+             gt_bboxes_ignore=None):
+        assert len(cls_scores) == len(bbox_preds) == len(centernesses)
+        featmap_sizes = [featmap.size()[-2:] for featmap in cls_scores]
+        all_level_points = self.get_points(featmap_sizes, bbox_preds[0].dtype,
+                                           bbox_preds[0].device)
+        labels, bbox_targets = self.get_targets(all_level_points, gt_bboxes,
+                                                gt_labels)
+        return labels
 
     @force_fp32(apply_to=('cls_scores', 'bbox_preds', 'centernesses'))
     def loss(self,

@@ -46,7 +46,7 @@ class DistillHeadBaseDetector(BaseDetector):
         self.distill_cfg = distill_cfg
         student_modules = dict(self.student.named_modules())
         teacher_modules = dict(self.teacher.named_modules())
-        # self.count=0
+        self.count=0
 
         def regitster_hooks(student_module, teacher_module):
             def hook_teacher_forward(module, input, output):
@@ -163,6 +163,8 @@ class DistillHeadBaseDetector(BaseDetector):
         self.teacher.eval()
         tea_feats = self.teacher.extract_feat(img)
         tea_cls_scores, tea_bbox_preds, tea_centernesses = self.teacher.bbox_head(tea_feats)
+        # results = self.teacher.bbox_head.get_bboxes(tea_cls_scores, tea_bbox_preds, tea_centernesses, img_metas)
+        # import ipdb;ipdb.set_trace()
 
         
         # vis_img = img[0].permute(1,2,0).cpu().numpy().copy()
@@ -180,9 +182,17 @@ class DistillHeadBaseDetector(BaseDetector):
         #     cls_feat = cv2.applyColorMap(cls_feat, cv2.COLORMAP_PLASMA)
         #     desired_size = (vis_img.shape[1], vis_img.shape[0])
         #     cls_feat = cv2.resize(cls_feat, desired_size)
-        #     # vis_img = cls_feat
+            
         #     vis_img_out = vis_img + cls_feat
-        #     print(cv2.imwrite('/home/cjh/projects/PGD/work_dirs/vis/cnn_vis{0}.jpg'.format(self.count + i), vis_img_out))
+
+        #     for box in results[0][0]:
+        #         x1,y1,x2,y2 = box[0], box[1], box[2], box[3]
+        #         left_top = (int(x1),int(y1))
+        #         right_bottom = (int(x2),int(y2))
+        #         cv2.rectangle(vis_img_out, left_top, right_bottom, color=(255, 0, 0), thickness=3)
+
+        #     # print(cv2.imwrite('/home/cjh/projects/PGD/work_dirs/vis/cnn_vis{0}.jpg'.format(self.count + i), vis_img_out))
+        #     print(cv2.imwrite('/home/cjh/projects/PGD/work_dirs/vis_w_pred/cnn_vis{0}.jpg'.format(self.count + i), vis_img_out))
         # self.count += 10    
 
 
@@ -206,7 +216,15 @@ class DistillHeadBaseDetector(BaseDetector):
         #     cls_feat = cv2.resize(cls_feat, desired_size)
         #     # vis_img = cls_feat
         #     vis_img_out = vis_img + cls_feat
-        #     print(cv2.imwrite('/home/cjh/projects/PGD/work_dirs/vis_assign/cnn_vis{0}.jpg'.format(self.count + i), vis_img_out))
+
+        #     for box in kwargs['gt_bboxes'][0]:
+        #         x1,y1,x2,y2 = box[0], box[1], box[2], box[3]
+        #         left_top = (int(x1),int(y1))
+        #         right_bottom = (int(x2),int(y2))
+        #         cv2.rectangle(vis_img_out, left_top, right_bottom, color=(0, 255, 0), thickness=3)
+
+        #     # print(cv2.imwrite('/home/cjh/projects/PGD/work_dirs/vis_assign/cnn_vis{0}.jpg'.format(self.count + i), vis_img_out))
+        #     print(cv2.imwrite('/home/cjh/projects/PGD/work_dirs/vis_w_gt/cnn_vis{0}.jpg'.format(self.count + i), vis_img_out))
         # self.count += 10       
 
 
