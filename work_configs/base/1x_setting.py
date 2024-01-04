@@ -4,7 +4,7 @@ data_root = 'data/coco/'
 file_client_args = dict(
     backend='petrel',
     path_mapping=({
-        'data/coco/': 's3://llmit/czh/coco'
+        'data/coco/': 's3://llmit/czh/coco/'
     })
 )
 img_norm_cfg = dict(
